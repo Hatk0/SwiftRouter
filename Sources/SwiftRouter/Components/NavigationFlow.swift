@@ -49,7 +49,7 @@ public struct NavigationFlow<Route: Routable, Content: View>: View {
     
     public var body: some View {
         RouterView(router: router) { childRouter in
-            RoutableNavigationStack {
+            RoutableNavigationStack<Route, Content> {
                 content()
             }
         }

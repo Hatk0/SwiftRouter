@@ -9,15 +9,15 @@ import SwiftUI
 
 /// Main component for working with router
 public struct RouterView<Route: Routable, Content: View>: View {
-    @StateObject private var router: Router<Route>
+    @ObservedObject private var router: Router<Route>
     @Environment(\.dismiss) private var dismiss
     private let content: (Router<Route>) -> Content
     
     public init(
-        router: Router<Route> = Router(),
+        router: Router<Route>,
         @ViewBuilder content: @escaping (Router<Route>) -> Content
     ) {
-        _router = StateObject(wrappedValue: router)
+        self.router = router
         self.content = content
     }
     
