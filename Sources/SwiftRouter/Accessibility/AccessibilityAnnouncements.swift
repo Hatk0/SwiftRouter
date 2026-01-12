@@ -29,7 +29,7 @@ public struct AccessibilityObserver: NavigationObserver {
             }
         }()
         
-        guard let announcement = announcement else { return }
+        guard let announcement else { return }
         
         Task { @MainActor in
             UIAccessibility.post(notification: .screenChanged, argument: announcement)

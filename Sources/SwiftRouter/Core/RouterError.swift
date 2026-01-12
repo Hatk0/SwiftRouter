@@ -49,7 +49,7 @@ public enum DeepLinkError: Error, LocalizedError {
         case .noParserFound(let url):
             return "No parser found for URL: \(url)"
         case .parsingFailed(let url, let reason):
-            if let reason = reason {
+            if let reason {
                 return "Failed to parse URL: \(url). Reason: \(reason)"
             }
             return "Failed to parse URL: \(url)"

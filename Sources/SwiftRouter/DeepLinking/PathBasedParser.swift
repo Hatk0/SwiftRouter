@@ -28,10 +28,10 @@ public final class PathBasedParser<Route: Routable>: DeepLinkParser {
     }
     
     public func canHandle(_ url: URL) -> Bool {
-        if let scheme = scheme, url.scheme != scheme {
+        if let scheme, url.scheme != scheme {
             return false
         }
-        if let host = host, url.host != host {
+        if let host, url.host != host {
             return false
         }
         return true

@@ -63,6 +63,9 @@ public final class Router<Route: Routable>: ObservableObject {
     /// Current navigation task (to prevent race conditions)
     private var navigationTask: Task<Void, Never>?
     
+    /// Closure to dismiss the router's root view (e.g. close sheet)
+    public var dismissAction: (() -> Void)?
+    
     // MARK: - Initialization
     
     /// Creates a new router instance
@@ -72,6 +75,32 @@ public final class Router<Route: Routable>: ObservableObject {
     }
     
     // MARK: - Navigation Methods
+    
+    /// Navigate to a route based on its presentation type
+    ///
+    /// This is the primary method for navigation. It inspects the route's `presentationType`
+    /// and calls the appropriate method (push, presentSheet, etc.).
+    ///
+    /// - Parameter route: The route to navigate to
+    public func navigate(_ route: Route) {
+        switch route.presentationType {
+        case .push:
+            push(route)
+        case .sheet:
+            presentSheet(route)
+        case .fullScreenCover:
+            presentFullScreen(route)
+        case .popover:
+            presentPopover(route)
+        case .replace:
+            replace(with: route)
+        case .custom:
+            // Custom transitions usually imply a push with custom transaction or similar,
+            // strictly speaking depends on implementation, but for now we default to push
+            // or we could ignore if not handled. Let's default to push for safety.
+            push(route)
+        }
+    }
     
     /// Pushes a new route onto the navigation stack
     ///
@@ -227,6 +256,11 @@ public final class Router<Route: Routable>: ObservableObject {
         interceptors.removeAll()
     }
     
+    /// Close the current router context (e.g. dismiss sheet)
+    public func close() {
+        dismissAction?()
+    }
+        
     // MARK: - Observers
     
     /// Add observer for event tracking

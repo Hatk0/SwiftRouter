@@ -23,13 +23,5 @@ public struct RoutableNavigationStack<Route: Routable, Root: View>: View {
                     route.view()
                 }
         }
-        .sheet(item: $router.sheet) { route in
-            route.view()
-        }
-        #if os(iOS) || os(tvOS) || os(watchOS) || os(visionOS)
-        .fullScreenCover(item: $router.fullScreenCover) { route in
-            route.view()
-        }
-        #endif
     }
 }
