@@ -27,18 +27,19 @@ public final class DeepLinkCoordinator<Route: Routable> {
     }
     
     /// Deep link processing
+    /// - Parameter url: The URL to handle
+    /// - Returns: True if handled successfully
+    /// - Throws: `DeepLinkError` if parsing fails or no parser found
     @discardableResult
-    public func handle(_ url: URL) -> Bool {
+    public func handle(_ url: URL) throws -> Bool {
         // Looking for a suitable parser
         guard let parser = parsers.first(where: { $0.canHandle(url) }) else {
-            print("No parser found for URL: \(url)")
-            return false
+            throw DeepLinkError.noParserFound(url)
         }
         
         // Parsing URLs
         guard let routes = parser.parse(url) else {
-            print("Failed to parse URL: \(url)")
-            return false
+            throw DeepLinkError.parsingFailed(url)
         }
         
         // Navigation
@@ -52,10 +53,12 @@ public final class DeepLinkCoordinator<Route: Routable> {
     }
     
     /// Processing deferred deep links
-    public func processPendingDeepLink() {
-        guard let url = pendingDeepLink else { return }
+    /// - Returns: True if processed successfully, false otherwise
+    @discardableResult
+    public func processPendingDeepLink() -> Bool {
+        guard let url = pendingDeepLink else { return false }
         pendingDeepLink = nil
-        handle(url)
+        return (try? handle(url)) ?? false
     }
     
     private func navigate(to routes: [Route]) {

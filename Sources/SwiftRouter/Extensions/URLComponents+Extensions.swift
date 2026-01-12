@@ -23,8 +23,8 @@ public extension URL {
         return parameters
     }
     
-    /// Extracting path components
-    var pathComponents: [String] {
-        self.pathComponents.filter { $0 != "/" }
+    /// Extracting path components (excluding root "/")
+    var pathComponentsArray: [String] {
+        pathComponents.filter { $0 != "/" }
     }
 }

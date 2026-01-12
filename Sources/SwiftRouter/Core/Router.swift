@@ -7,6 +7,28 @@
 
 import SwiftUI
 
+/// A type-safe router for SwiftUI applications with support for deep linking,
+/// navigation interceptors, and event observers.
+///
+/// `Router` manages navigation state and provides methods for navigating between screens
+/// using push, sheet, fullScreenCover, and popover presentations.
+///
+/// Example:
+/// ```swift
+/// enum AppRoute: Routable {
+///     case home
+///     case profile(userId: String)
+///     
+///     var id: String { /* ... */ }
+///     func view() -> some View { /* ... */ }
+/// }
+///
+/// let router = Router<AppRoute>()
+/// router.push(.home)
+/// router.presentSheet(.profile(userId: "123"))
+/// ```
+///
+/// - Important: Router must be used on the MainActor
 @MainActor
 public final class Router<Route: Routable>: ObservableObject {
     
@@ -25,7 +47,7 @@ public final class Router<Route: Routable>: ObservableObject {
     @Published public var popover: Route?
     
     /// History of all transitions (for analytics/debugging)
-    @Published private(set) public var navigationHistory: [NavigationEvent] = []
+    @Published private(set) public var navigationHistory: [NavigationEvent<Route>] = []
     
     // MARK: - Private Properties
     
@@ -38,17 +60,35 @@ public final class Router<Route: Routable>: ObservableObject {
     /// Maximum history size
     private let maxHistorySize: Int
     
+    /// Current navigation task (to prevent race conditions)
+    private var navigationTask: Task<Void, Never>?
+    
     // MARK: - Initialization
     
+    /// Creates a new router instance
+    /// - Parameter maxHistorySize: Maximum number of navigation events to keep in history. Defaults to 100.
     public init(maxHistorySize: Int = 100) {
         self.maxHistorySize = maxHistorySize
     }
     
     // MARK: - Navigation Methods
     
-    /// Push navigation to new screen
+    /// Pushes a new route onto the navigation stack
+    ///
+    /// This method cancels any pending navigation and creates a new navigation task.
+    /// The navigation can be blocked by registered interceptors.
+    ///
+    /// - Parameter route: The route to navigate to
+    ///
+    /// Example:
+    /// ```swift
+    /// router.push(.profile(userId: "123"))
+    /// ```
     public func push(_ route: Route) {
-        Task {
+        // Cancel previous navigation if still running
+        navigationTask?.cancel()
+        
+        navigationTask = Task { @MainActor in
             guard await shouldNavigate(to: route, type: .push) else { return }
             
             path.append(route)
@@ -57,7 +97,9 @@ public final class Router<Route: Routable>: ObservableObject {
         }
     }
     
-    /// Pop to previous screen
+    /// Pops the topmost route from the navigation stack
+    ///
+    /// If the stack is empty, this method does nothing.
     public func pop() {
         guard !path.isEmpty else { return }
         
@@ -66,7 +108,7 @@ public final class Router<Route: Routable>: ObservableObject {
         notifyObservers(event: .didPop)
     }
     
-    /// Pop to root screen
+    /// Pops all routes from the navigation stack, returning to the root
     public func popToRoot() {
         guard !path.isEmpty else { return }
         
@@ -87,7 +129,9 @@ public final class Router<Route: Routable>: ObservableObject {
     
     /// Present sheet
     public func presentSheet(_ route: Route) {
-        Task {
+        navigationTask?.cancel()
+        
+        navigationTask = Task { @MainActor in
             guard await shouldNavigate(to: route, type: .sheet) else { return }
             
             sheet = route
@@ -105,7 +149,9 @@ public final class Router<Route: Routable>: ObservableObject {
     
     /// Present fullScreenCover
     public func presentFullScreen(_ route: Route) {
-        Task {
+        navigationTask?.cancel()
+        
+        navigationTask = Task { @MainActor in
             guard await shouldNavigate(to: route, type: .fullScreenCover) else { return }
             
             fullScreenCover = route
@@ -123,7 +169,9 @@ public final class Router<Route: Routable>: ObservableObject {
     
     /// Present popover
     public func presentPopover(_ route: Route) {
-        Task {
+        navigationTask?.cancel()
+        
+        navigationTask = Task { @MainActor in
             guard await shouldNavigate(to: route, type: .popover) else { return }
             
             popover = route
@@ -172,6 +220,9 @@ public final class Router<Route: Routable>: ObservableObject {
     
     
     /// Clear all interceptors
+    ///
+    /// Removes all registered interceptors. Use this when you want to reset
+    /// navigation policies (e.g., after logout).
     public func clearInterceptors() {
         interceptors.removeAll()
     }
@@ -185,6 +236,9 @@ public final class Router<Route: Routable>: ObservableObject {
     
     
     /// Clear all observers
+    ///
+    /// Removes all registered observers. Useful for testing or when changing
+    /// analytics configuration.
     public func clearObservers() {
         observers.removeAll()
     }
@@ -193,8 +247,7 @@ public final class Router<Route: Routable>: ObservableObject {
 private extension Router {
     
     func shouldNavigate(to route: Route, type: NavigationType) async -> Bool {
-        let currentInterceptors = await MainActor.run { interceptors }
-        for interceptor in currentInterceptors {
+        for interceptor in interceptors {
             let canNavigate = await interceptor.shouldNavigate(to: route, type: type)
             if !canNavigate {
                 return false
@@ -205,7 +258,7 @@ private extension Router {
     
     func recordNavigation(route: Route?, type: NavigationType) {
         let event = NavigationEvent(
-            route: route.map { "\($0)" },
+            route: route,
             type: type,
             timestamp: Date()
         )

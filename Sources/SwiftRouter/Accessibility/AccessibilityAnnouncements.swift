@@ -15,19 +15,24 @@ public struct AccessibilityObserver: NavigationObserver {
     
     public func onNavigationEvent(_ event: NavigationObserverEvent) {
         #if os(iOS) || os(tvOS) || os(watchOS)
-        switch event {
-        case .didNavigate(let route, _):
-            let announcement = "Navigated to \(route)"
+        // Extract announcement before Task to avoid data race
+        let announcement: String? = {
+            switch event {
+            case .didNavigate(let route, _):
+                return "Navigated to \(route)"
+            case .didPop:
+                return "Navigated back"
+            case .didPopToRoot:
+                return "Returned to home"
+            default:
+                return nil
+            }
+        }()
+        
+        guard let announcement = announcement else { return }
+        
+        Task { @MainActor in
             UIAccessibility.post(notification: .screenChanged, argument: announcement)
-            
-        case .didPop:
-            UIAccessibility.post(notification: .screenChanged, argument: "Navigated back")
-            
-        case .didPopToRoot:
-            UIAccessibility.post(notification: .screenChanged, argument: "Returned to home")
-            
-        default:
-            break
         }
         #endif
     }

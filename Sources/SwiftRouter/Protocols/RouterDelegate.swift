@@ -45,7 +45,7 @@ public struct RouterDebugView<Route: Routable>: View {
                 ForEach(router.navigationHistory.reversed()) { event in
                     VStack(alignment: .leading, spacing: 4) {
                         HStack {
-                            Text("\(event.type)")
+                            Text(String(describing: event.type))
                                 .font(.headline)
                             Spacer()
                             Text(event.timestamp, style: .time)
@@ -54,7 +54,7 @@ public struct RouterDebugView<Route: Routable>: View {
                         }
                         
                         if let route = event.route {
-                            Text(route)
+                            Text(String(describing: route))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }

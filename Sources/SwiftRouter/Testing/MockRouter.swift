@@ -16,7 +16,7 @@ public final class MockRouter<Route: Routable>: ObservableObject {
     @Published public var sheet: Route?
     @Published public var fullScreenCover: Route?
     @Published public var popover: Route?
-    @Published public private(set) var navigationHistory: [NavigationEvent] = []
+    @Published public private(set) var navigationHistory: [NavigationEvent<Route>] = []
     
     // Tracking for tests
     public private(set) var pushedRoutes: [Route] = []
@@ -89,7 +89,7 @@ public final class MockRouter<Route: Routable>: ObservableObject {
     
     private func recordNavigation(route: Route?, type: NavigationType) {
         let event = NavigationEvent(
-            route: route.map { "\($0)" },
+            route: route,
             type: type,
             timestamp: Date()
         )

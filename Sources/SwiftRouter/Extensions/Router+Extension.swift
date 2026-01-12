@@ -10,7 +10,8 @@ import Foundation
 public extension Router {
     
     /// Processing deep links directly through the router
-    func handleDeepLink(_ url: URL, using coordinator: DeepLinkCoordinator<Route>) {
-        coordinator.handle(url)
+    /// - Returns: True if handled successfully
+    func handleDeepLink(_ url: URL, using coordinator: DeepLinkCoordinator<Route>) -> Bool {
+        (try? coordinator.handle(url)) ?? false
     }
 }
