@@ -2,7 +2,7 @@
 
 A modern, type-safe routing library for SwiftUI with support for deep linking, navigation interceptors, and event observers.
 
-[![Swift](https://img.shields.io/badge/Swift-6.0-orange.svg)](https://swift.org)
+[![Swift](https://img.shields.io/badge/Swift-5.9-orange.svg)](https://swift.org)
 [![Platforms](https://img.shields.io/badge/Platforms-iOS%20|%20macOS%20|%20tvOS%20|%20watchOS%20|%20visionOS-blue.svg)](https://developer.apple.com)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
@@ -13,7 +13,7 @@ A modern, type-safe routing library for SwiftUI with support for deep linking, n
 ✅ **Deep Linking** - Built-in support for custom schemes and universal links  
 ✅ **Navigation Interceptors** - Block or modify navigation flows (auth, confirmation, etc.)  
 ✅ **Event Observers** - Track navigation for analytics, logging, and debugging  
-✅ **Swift 6 Concurrency** - Full Sendable conformance and strict concurrency  
+✅ **Concurrency** - Support for Structured Concurrency and Sendable  
 ✅ **Testability** - Includes `MockRouter` for easy testing
 
 ## Installation
@@ -176,8 +176,8 @@ func testNavigation() async {
     
     router.push(.home)
     
-    #expect(router.pushedRoutes.contains(.home))
-    #expect(router.lastPushedRoute == .home)
+    XCTAssertTrue(router.pushedRoutes.contains(.home))
+    XCTAssertEqual(router.lastPushedRoute, .home)
 }
 ```
 
@@ -209,12 +209,12 @@ func testNavigation() async {
 - `removeObserver(withId:)` - Remove specific observer
 - `clearObservers()` - Remove all observers
 
-## Migration from Swift 5
+## Swift Concurrency
 
-SwiftRouter uses Swift 6 strict concurrency. Update your routes:
+SwiftRouter is built with modern Swift concurrency in mind. For best results, ensure your routes conform to `Sendable`:
 
 ```swift
-// ✅ Swift 6 - Add Sendable, Identifiable
+// ✅ Swift 5.9+ - Add Sendable, Identifiable
 enum AppRoute: Routable, Identifiable, Sendable {
     var id: String { /* ... */ }
 }
@@ -222,7 +222,7 @@ enum AppRoute: Routable, Identifiable, Sendable {
 
 ## Requirements
 
-- Swift 6.0+
+- Swift 5.9+
 - iOS 16.0+ / macOS 13.0+ / tvOS 16.0+ / watchOS 9.0+ / visionOS 1.0+
 
 ## License

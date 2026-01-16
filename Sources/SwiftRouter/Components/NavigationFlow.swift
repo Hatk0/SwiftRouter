@@ -35,12 +35,20 @@ import SwiftUI
 ///     }
 /// }
 /// ```
+@MainActor
 public struct NavigationFlow<Route: Routable, Content: View>: View {
     @StateObject private var router: Router<Route>
     private let content: () -> Content
     
     public init(
-        router: Router<Route> = Router(),
+        @ViewBuilder content: @escaping () -> Content
+    ) {
+        _router = StateObject(wrappedValue: Router())
+        self.content = content
+    }
+
+    public init(
+        router: Router<Route>,
         @ViewBuilder content: @escaping () -> Content
     ) {
         _router = StateObject(wrappedValue: router)
